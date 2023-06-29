@@ -3,13 +3,12 @@
 import argparse
 import os
 import re
-# from datetime import datetime as dt
 
 
 class Cast:
-    """Simple class to store cast attributes.
+    """Simple class to store and process cast details. Must be initialized
+    with a list of cast ids (names).
     """
-
     def __init__(self, casts, outdir):
         self.casts = casts
         self.cast_id = casts[0]
@@ -40,21 +39,18 @@ class Cast:
 def main():
     parser = argparse.ArgumentParser(description="""Splits the log file from
                                      an SBE35 into individual cast files.""")
-    parser.add_argument('-sc', '--starting', dest='cast_id', type=str,
-                        help='starting cast id')
-    parser.add_argument('infile', type=str,
-                        help='source file')
     parser.add_argument('-cf', '--castfile', dest='cast_file', type=str,
                         help="""file containing the list of cast ids
-                                (ssscc file)""")
+                                (ssscc file)""", required=True)
+    parser.add_argument('-sc', '--starting', dest='cast_id', type=str,
+                        help='starting cast id', required=True)
     parser.add_argument('-o', '--outdir', dest='outdir', type=str,
                         default='split',
                         help='directory to save output files (default: ./split)')
+    parser.add_argument('infile', type=str,
+                        help='source file')
 
     args = parser.parse_args()
-    if not args.infile:
-        parser.print_help()
-        return
 
     infile = os.path.abspath(args.infile)
     cast_file = os.path.abspath(args.cast_file)
@@ -76,7 +72,6 @@ def main():
 
     # Read input file and parse out individual cast data into new files...
     pattern = r'bn.+?diff.+?t90'
-    # last_date = None
     with open(infile, 'r') as f:
         # open the factory calibration coefficient file and parse each line
         # into a name and value...
@@ -87,9 +82,10 @@ def main():
             if line.split()[7] == '1':
                 cast.new_cast()
             cast.sample_buffer.append(line)
-            # # find the timestamp
-            # sample_date = ' '.join'(line.split()[1:4])
-            # if last_date:
+
+    # Save the last cast and exit...
+    if len(cast.sample_buffer) != 0:
+        cast.export_cast_file()
 
 
 if __name__ == '__main__':
